@@ -5,3 +5,4 @@ matplotlib
 pyarrow
 scikit-learn
 xgboost
+seaborn
