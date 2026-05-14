@@ -5,7 +5,7 @@
 
 ## What this is
 
-I built a system that catches fake engagement on YouTube — bot farms that dump likes and views on videos to make them look popular. 
+I built a system that catches fake engagement on YouTube - bot farms that dump likes and views on videos to make them look popular. 
 
 The project uses **real YouTube data** (1.68 million rows tracking 10,000 videos over time) to find two things:
 1. **Individual videos** with suspicious engagement patterns
@@ -17,9 +17,9 @@ I found **15 bot networks** in my sample, including one group of **85 videos** t
 
 ## Why I built this
 
-I started with a simpler project using fake data (Faker library) where I wrote rules to catch bots. Got 100% accuracy — which felt great until I realized the problem: **I was checking my own homework.** The fake data had patterns I put there, and my rules just matched them. Useless in the real world.
+I started with a simpler project using fake data (Faker library) where I wrote rules to catch bots. Got 100% accuracy - which felt great until I realized the problem: **I was checking my own homework.** The fake data had patterns I put there, and my rules just matched them. Useless in the real world.
 
-So I switched to real YouTube data where I don't know what's fake. Built an **unsupervised system** that finds weird patterns without needing labeled examples. That's what actual Trust & Safety teams do — fraud patterns change constantly, you can't rely on old examples.
+So I switched to real YouTube data where I don't know what's fake. Built an **unsupervised system** that finds weird patterns without needing labeled examples. Since fraud patterns change constantly, we can't rely on old examples and hence have to find the patterns newly.
 
 ---
 
@@ -31,37 +31,37 @@ Real engagement grows gradually. Bots spike hard and disappear. I engineered fea
 
 | Feature | What it means |
 |---------|-------------|
-| `like_view_ratio` | Likes compared to views — 50% is weird, 0.001% is normal |
+| `like_view_ratio` | Likes compared to views - 50% is weird, 0.001% is normal |
 | `like_spike_ratio` | How big was the spike compared to the video's normal? 100x = bot, 1.2x = fine |
-| `sustainability` | After the spike, does engagement keep going or die? Bots die, viral content sustains |
+| `sustainability` | After the spike, does engagement keep going or die? Bots die, a legit viral content sustains |
 
-**The sustainability feature is the key one.** I designed it from scratch after thinking about how bot farms actually behave — they disconnect after dumping likes. Viral videos keep growing because real people share them.
+**The sustainability feature is the key one.** I designed it from scratch after thinking about how bot farms actually behave - they disconnect after dumping likes. Viral videos keep growing showing a sustained growth in likes / views, because real people share them.
 
 ### Step 2: Anomaly Detection — "Find the weird ones"
 
-Used **Isolation Forest** to flag the 8% most unusual videos. No labels needed — it learns what's "normal" and flags deviations.
+Used **Isolation Forest** to flag the 8% most unusual videos. No labels needed - it learns what's "normal" and flags deviations.
 
 **Why 8%?** I tried 5% first but the coordination signals were too weak. At 8%, I found the same bot networks but with clearer overlap and shared timing. Validated by checking the flagged videos actually had bot signatures (low sustainability, high spikes, same peak hours).
 
 ### Step 3: Find Coordinated Networks — "Who's working together?"
 
-Real fraud isn't solo. Bot farms hit multiple videos at once. I built three signals:
+Real fraud (bot network) isn't operated alone . Bot farms hit multiple videos at once. I built three signals:
 
 1. **Peak hour clustering** — 85 videos all spiking at Hour 12? Not coincidence.
 2. **Temporal co-spiking** — Videos with max likes in the same hour window
 3. **DBSCAN clustering** — Group suspicious videos by engagement fingerprint
 
-**Important fix:** First I tried clustering ALL videos. Result: 9,500 normal videos in one giant blob. Completely useless. Then I realized — **real investigators only cluster their suspect list.** Did that instead. Found 15 clean networks.
+**Important fix:** First I tried clustering ALL videos. Result: 9,500 normal videos in one giant blob. Not providing usefull information. Then I realized — **only cluster their suspect list.** Did that instead. Found 15 clean networks.
 
 ### Step 4: Tiered Enforcement — "What do we do about it?"
 
-Can't manually review everything. Built a scoring system that routes videos to different actions:
+Since we can't manually review everything. Built a scoring system that routes videos to different actions:
 
 | Score | Tier | Action |
 |-------|------|--------|
-| 6+ | Tier 1 | Auto-remove fake engagement, demonetize |
+| 6+ | Tier 1 | Auto-remove fake engagement |
 | 5-6 | Tier 2 | Human investigator looks at the network |
-| 4-5 | Tier 3 | Watchlist — check again next cycle |
+| 4-5 | Tier 3 | Watchlist - check again next cycle |
 | 2-4 | Tier 4 | Probably false positive, re-check |
 | 0-1 | Clean | Leave it alone |
 
