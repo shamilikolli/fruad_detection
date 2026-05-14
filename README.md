@@ -1,4 +1,4 @@
-# YouTube Fake Engagement & Bot Network Detection
+## YouTube CIB Detection — Fake Engagement & Bot Network Analysis
 
 **author** — Shamili Kolli, India  
 ---
@@ -7,13 +7,30 @@
 
 I built a system that catches fake engagement on YouTube - bot farms that dump likes and views on videos to make them look popular. 
 
-The project uses **real YouTube data** (1.68 million rows tracking 10,000 videos over time) to find two things:
+The project has two phases — Phase 1 uses simulated data to build and understand the detection pipeline end to end. Phase 2 applies unsupervised ML to real YouTube data where no labels exist.
+
+The phase2 pipeline uses **real YouTube data** (1.68 million rows tracking 10,000 videos over time) to find two things:
 1. **Individual videos** with suspicious engagement patterns
 2. **Groups of videos** being manipulated together by the same bot network
 
 I found **15 bot networks** in my sample, including one group of **85 videos** that were clearly coordinated. More than half the suspicious activity was organized, not random.
 
 ---
+
+## project structure
+
+Fraud_detection/
+├── phase1_baseline/                      # Simulated data pipeline
+│   ├── 01_data_simulation.ipynb          # Generate fake users & events with Faker
+│   ├── 02_feature_engineering.ipynb      # Build behavioral features per user
+│   └── 03_rule_based_detection.ipynb     # Hard rules: velocity, IP, account age
+│
+├── phase2_youtube_cib/                   # Real YouTube data pipeline
+│   └── 04_ml_detection.ipynb            # Isolation Forest + DBSCAN bot networks
+│
+├── dashboard/                            # Visualizations (in progress)
+├── requirements.txt                      # Python dependencies
+└── README.md
 
 ## Why I built this
 
@@ -45,13 +62,13 @@ Used **Isolation Forest** to flag the 8% most unusual videos. No labels needed -
 
 ### Step 3: Find Coordinated Networks — "Who's working together?"
 
-Real fraud (bot network) isn't operated alone . Bot farms hit multiple videos at once. I built three signals:
+Real fraud (bot network) isn't a solo operation . Bot farms hit multiple videos at once. I built three signals:
 
 1. **Peak hour clustering** — 85 videos all spiking at Hour 12? Not coincidence.
 2. **Temporal co-spiking** — Videos with max likes in the same hour window
 3. **DBSCAN clustering** — Group suspicious videos by engagement fingerprint
 
-**Important fix:** First I tried clustering ALL videos. Result: 9,500 normal videos in one giant blob. Not providing usefull information. Then I realized — **only cluster their suspect list.** Did that instead. Found 15 clean networks.
+**Important fix:** First I tried clustering ALL videos. Result: 9,500 normal videos in one giant blob. Not usefull. Then I realized — **only cluster their suspect list.** Did that instead. Found 15 clean networks.
 
 ### Step 4: Tiered Enforcement — "What do we do about it?"
 
